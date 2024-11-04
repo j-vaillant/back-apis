@@ -3,15 +3,14 @@ const app = express();
 const bodyParser = require("body-parser");
 const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
+const cors = require("cors");
 
-const allow = (_req, res, next) => {
-  res.set("Access-Control-Allow-Origin", "*");
-  res.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.set("Access-Control-Allow-Headers", "Content-Type");
-  next();
-};
-
-app.use(allow);
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
 
 app.use(
   bodyParser.urlencoded({

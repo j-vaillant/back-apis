@@ -1,13 +1,13 @@
 const mongoose = require("mongoose");
 
-const UserSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  login: { type: String, required: true, unique: true },
-  pwd: { type: String, required: true },
-  role: { type: String, enum: ["sg", "owner", "gm", "player"] },
-  group: { type: String, required: false },
+const MovieSchema = new mongoose.Schema({
+  title: { type: String, required: true, unique: true },
+  year: { type: Number, required: true },
+  director: { type: String, required: true },
+  rating: { type: Number, required: true },
+  actors: [{ type: String }],
 });
 
-const User = mongoose.model("User", UserSchema);
+const Movie = mongoose.model("Movie", MovieSchema);
 
-module.exports = User;
+module.exports = Movie;

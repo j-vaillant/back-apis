@@ -1,35 +1,39 @@
 const express = require("express");
 const app = express();
-const { MongoClient, ServerApiVersion } = require("mongodb");
-const uri = `mongodb+srv://jva:${process.env.DB_PWD}@scriptgames.y9ccz.mongodb.net/?retryWrites=true&w=majority&appName=scriptgames`;
-
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
-});
+const { connectToDatabase } = require("./utils/db");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const Movie = require("./models/Movie");
 
 require("dotenv").config();
 
-const allow = (_req, res, next) => {
-  res.set("Access-Control-Allow-Origin", "*");
-  res.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.set("Access-Control-Allow-Headers", "Content-Type");
-  next();
-};
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
 
-app.use(allow);
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+  })
+);
 
-app.get("/", (req, res) => {
+app.use(bodyParser.json());
+
+connectToDatabase();
+
+app.post("/db", async (req, res) => {
+  const request = JSON.parse(req.body.request);
+
   try {
-    const collection = db.collection("movies");
-    const data = JSON.parse(fs.readFileSync("./data/movies.json"));
-    collection.insertMany(data);
-  } catch {}
+    const movies = await Movie.find(request);
 
-  res.status(201).json({ message: "Abonnement reçu avec succès." });
+    res.json(movies);
+  } catch (e) {
+    res.status(500).send(e.message);
+  }
 });
 
 app.listen(3001, () => {
