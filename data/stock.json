@@ -20,6 +20,14 @@
       {
         "id": 5,
         "description": "Produit5"
+      },
+      {
+        "id": 6,
+        "description": "Produit6"
+      },
+      {
+        "id": 7,
+        "description": "Produit7"
       }
     ]
   }

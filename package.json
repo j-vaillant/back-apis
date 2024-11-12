@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "cross-env VINCI=formation node main 1 2 3",
+    "start": "cross-env STOCK_MODE=FILO node main",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
