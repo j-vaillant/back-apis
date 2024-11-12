@@ -1,71 +1,59 @@
-const fs = require("node:fs");
-const process = require("node:process");
-const readline = require("node:readline/promises");
-const Pile = require("./classes/Pile");
-const File = require("./classes/File");
+const express = require("express");
+const app = express();
+const bodyParser = require("body-parser");
+const multer = require("multer");
+const upload = multer({ dest: "uploads/" });
+const { open } = require("node:fs/promises");
+const cors = require("cors");
 
-const { stdin: input, stdout: output } = require("node:process");
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
 
-const rl = readline.createInterface({ input, output });
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+  })
+);
 
-const genProduct = (lastId) => {
-  return { id: lastId + 1, description: `Produit${lastId + 1}` };
-};
+app.use(bodyParser.json());
 
-const save = (products) => {
-  const data = {
-    stock: {
-      products,
-    },
+app.post("/csv", upload.single("file"), async (req, res) => {
+  const path = req.file.path;
+  let count = 0;
+  const json = {
+    data: [],
   };
-  fs.writeFileSync("./data/stock.json", JSON.stringify(data, null, 2));
-};
-
-const run = async () => {
-  const data = JSON.parse(fs.readFileSync("./data/stock.json"));
-  const stockMode = process.env.STOCK_MODE;
-  const lastProduct = data.stock.products[data.stock.products.length - 1];
-  const lastId = lastProduct.id;
-  const stock =
-    stockMode === "FIFO"
-      ? new Pile(data.stock.products)
-      : new File(data.stock.products);
-
-  console.log(`${data.stock.products.length} produit(s) chargés`);
-
-  console.log("1) Ajouter un produit");
-  console.log("2) Sortir un produit");
-  console.log("3) Quitter");
-
-  const action = await rl.question("Que voulez-vous faire ? ");
-
-  if (action === "1") {
-    stock.add(genProduct(lastId));
-  }
-
-  if (action === "2") {
-    stock.remove();
-  }
-
-  if (action === "3") {
-    process.exit();
-  }
-
-  console.log("taille du nouveau stock:", stock.products.length);
 
   try {
-    save(stock.products);
-  } catch (e) {
-    console.log(e);
-  } finally {
-    console.log("enregistrement réussi !");
-    setTimeout(() => {
-      console.clear();
-      run();
-    }, 1500);
-  }
-};
+    const openHandler = await open(path, "r");
 
-(() => {
-  run();
-})();
+    for await (let line of openHandler.readLines()) {
+      //skip first line (headers)
+      if (count === 0) {
+        count++;
+        continue;
+      }
+      const columns = line.split(",");
+
+      json.data[count - 1] = {
+        firstName: columns[0],
+        lastName: columns[1],
+        birthDate: columns[2],
+      };
+
+      count++;
+    }
+
+    res.json(json).end();
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
+
+app.listen(3001, () => {
+  console.log("listen on port 3001");
+});

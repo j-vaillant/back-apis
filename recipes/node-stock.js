@@ -4,9 +4,19 @@ const readline = require("node:readline/promises");
 const Pile = require("./classes/Pile");
 const File = require("./classes/File");
 
-const { stdin: input, stdout: output } = require("node:process");
 
-const rl = readline.createInterface({ input, output });
+process.on("exit", () => {
+  console.log("Bye.");
+});
+
+process.on("SIGINT", () => {
+  console.log("Process Interrupted, exiting");
+});
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
 
 const genProduct = (lastId) => {
   return { id: lastId + 1, description: `Produit${lastId + 1}` };
@@ -48,7 +58,7 @@ const run = async () => {
   }
 
   if (action === "3") {
-    process.exit();
+    process.exitCode = 1;
   }
 
   console.log("taille du nouveau stock:", stock.products.length);
@@ -60,8 +70,11 @@ const run = async () => {
   } finally {
     console.log("enregistrement réussi !");
     setTimeout(() => {
-      console.clear();
-      run();
+      if (process.exitCode !== 1) {
+        console.clear();
+        run();
+      } else {
+      }
     }, 1500);
   }
 };
