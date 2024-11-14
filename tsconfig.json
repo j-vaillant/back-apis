@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ESNext", // Cibler la dernière version ECMAScript
+    "module": "NodeNext", // Utiliser NodeNext pour la gestion des modules
+    "moduleResolution": "NodeNext", // Résolution des modules compatible avec Node.js
+    "esModuleInterop": true, // Autoriser l'importation des modules CommonJS via "import"
+    "allowSyntheticDefaultImports": true, // Permet l'importation de modules CommonJS via "import"
+    "strict": true, // Mode strict pour la sécurité
+    "skipLibCheck": true, // Ignorer la vérification des types des bibliothèques
+    "outDir": "./dist", // Dossier de sortie pour les fichiers compilés
+    "sourceMap": true, // Générer des fichiers `.map` pour le débogage
+    "types": ["node"], // Inclure les types Node.js
+    "skipDefaultLibCheck": true // Sauter la vérification des types de la bibliothèque par défaut
+  },
+  "include": [
+    "*.ts", // Spécifie explicitement les fichiers TypeScript à inclure
+    "main.ts"
+  ],
+  "exclude": [
+    "node_modules", // Exclure les dossiers inutiles
+    "dist"
+  ]
+}
