@@ -14,7 +14,7 @@
   },
   "include": [
     "*.ts", // Spécifie explicitement les fichiers TypeScript à inclure
-    "main.ts"
+    "main.js"
   ],
   "exclude": [
     "node_modules", // Exclure les dossiers inutiles
