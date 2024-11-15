@@ -1,4 +1,4 @@
-const jwt = (req, res, next) => {
+const jwtMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (authHeader && authHeader.startsWith("Bearer ")) {
@@ -10,4 +10,4 @@ const jwt = (req, res, next) => {
   }
 };
 
-module.exports.jwt = jwt;
+module.exports.jwtMiddleware = jwtMiddleware;

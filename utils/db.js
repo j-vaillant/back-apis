@@ -13,4 +13,6 @@ async function connectToDatabase() {
   }
 }
 
+module.exports.MONGO_URI = MONGO_URI;
+
 module.exports.connectToDatabase = connectToDatabase;
