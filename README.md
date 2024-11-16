@@ -10,3 +10,8 @@ Out of the box
 
 - Jest
 - TS
+
+IA
+
+Le script pour entrainer le model se trouve dans *utils/ia/train*
+Le script pour créer les classes à partir de vos données de train se trouve dans *utils/ia/generate-classes*
