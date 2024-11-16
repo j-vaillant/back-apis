@@ -2,3 +2,6 @@ node_modules
 uploads/
 dist
 .env
+utils/ia/complete
+utils/ia/Test
+utils/ia/Training

@@ -1,13 +1,16 @@
 const express = require("express");
-const app = express();
-
-const session = require("express-session");
-const passport = require("passport");
+const multer = require("multer");
+const tf = require("@tensorflow/tfjs-node");
+const fs = require("fs");
+const sharp = require("sharp");
 const cors = require("cors");
 
-require("dotenv").config();
+const app = express();
+const port = 3001;
 
-const GoogleStrategy = require("passport-google-oauth2").Strategy;
+// Configuration de multer pour l'upload des fichiers
+const upload = multer({ dest: "uploads/" });
+const classes = JSON.parse(fs.readFileSync("./utils/ia/classes.json", "utf8"));
 
 app.use(
   cors({
@@ -16,94 +19,59 @@ app.use(
   })
 );
 
-app.use(
-  session({
-    secret: "secret",
-    resave: false,
-    saveUninitialized: true,
-  })
-);
+// Charger le modèle TensorFlow
+let model;
+(async () => {
+  console.log("Chargement du modèle...");
+  model = await tf.loadLayersModel("file://./utils/ia/model/model.json");
+  console.log("Modèle chargé.");
+})();
 
-app.use(passport.initialize()); // init passport on every route call
-app.use(passport.session());
+// Prétraitement de l'image
+const preprocessImage = async (filePath) => {
+  const buffer = await sharp(filePath)
+    .resize(128, 128) // Taille de l'image
+    .toBuffer();
 
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-
-authUser = (request, accessToken, refreshToken, profile, done) => {
-  return done(null, profile);
+  const tensor = tf.node
+    .decodeImage(buffer)
+    .expandDims(0) // Ajouter une dimension pour le batch
+    .toFloat()
+    .div(tf.scalar(255.0)); // Normalisation
+  return tensor;
 };
 
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: GOOGLE_CLIENT_ID,
-      clientSecret: GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:3001/auth/google/callback",
-      passReqToCallback: true,
-    },
-    authUser
-  )
-);
-
-passport.serializeUser((user, done) => {
-  console.log(`\n--------> Serialize User:`);
-  console.log(user);
-  done(null, user);
-});
-
-passport.deserializeUser((user, done) => {
-  console.log("\n--------- Deserialized User:");
-  console.log(user);
-  done(null, user);
-});
-
-app.get(
-  "/auth/google",
-  passport.authenticate("google", {
-    scope: ["email", "profile"],
-    prompt: "select_account",
-  })
-);
-
-app.get(
-  "/auth/google/callback",
-  passport.authenticate("google", { session: true }), // session:true permet de garder la session utilisateur
-  (req, res) => {
-    if (req.isAuthenticated()) {
-      res.redirect("http://localhost:3000/secureSSO");
-    } else {
-      res.redirect("http://localhost:3000/loginSSO");
-    }
+// Route pour prédire l'image
+app.post("/predict", upload.single("image"), async (req, res) => {
+  if (!model) {
+    return res.status(503).send("Modèle non chargé.");
   }
-);
 
-checkAuthenticated = (req, res, next) => {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.redirect("http://localhost:3000/loginSSO");
-};
+  const filePath = req.file.path;
 
-app.get("/user", checkAuthenticated, (req, res) => {
-  res.json(req.user);
-});
+  try {
+    const tensor = await preprocessImage(filePath);
+    const predictions = model.predict(tensor);
+    const scores = predictions.dataSync();
+    const results = classes.map((name, index) => ({
+      class: name,
+      score: scores[index],
+    }));
 
-app.post("/logout", (req, res, next) => {
-  req.logout((err) => {
-    if (err) {
-      return next(err);
-    }
-    req.session.destroy((err) => {
-      if (err) {
-        return next(err);
-      }
-      res.clearCookie("connect.sid");
-      console.log(`-------> User Logged out`);
-      res.redirect("http://localhost:3000/loginSSO");
+    // Nettoyage après traitement
+    fs.unlinkSync(filePath);
+
+    res.json({
+      success: true,
+      results: results.sort((a, b) => b.score - a.score), // Trier par score décroissant
     });
-  });
+  } catch (err) {
+    console.error("Erreur pendant la prédiction:", err);
+    res.status(500).send("Erreur lors de la prédiction.");
+  }
 });
 
-//Start the NODE JS server
-app.listen(3001, () => console.log(`Server started on port 3001...`));
+// Démarrer le serveur
+app.listen(port, () => {
+  console.log(`API disponible sur http://localhost:${port}`);
+});
